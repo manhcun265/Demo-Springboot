@@ -19,7 +19,7 @@ public interface UserMapper {
     User toEntity(UserCreateRequest request);
 
     @Mapping(target = "lastName", ignore = true)
-    UserResponse toResponse(User user);
+    UserResponse toUserResponse(User user);
     
     void updateEntity(@MappingTarget User user, UserUpdateRequest request);
     
