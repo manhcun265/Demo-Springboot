@@ -28,11 +28,8 @@ import java.util.List;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    // Repository thao tác với dữ liệu user
     private final UserRepository userRepository;
-    // Mapper chuyển đổi giữa entity và DTO
     private final UserMapper userMapper;
-
     private final PasswordEncoder passwordEncoder;
 
     // Tạo mới user
@@ -42,13 +39,13 @@ public class UserServiceImpl implements UserService {
             throw new AppException(ErrorCode.USER_EXITSTED);
         }
 
-        User user = userMapper.toEntity(request);
+        User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         HashSet<String> roles = new HashSet<>();
         roles.add(Role.USER.name());
 
-        user.setRoles(roles);
+//        user.setRoles(roles);
 
         return userRepository.save(user);
     }
@@ -69,7 +66,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
 
-        userMapper.updateEntity(user, request);
+        userMapper.updateUser(user, request);
         User savedUser = userRepository.save(user);
 
         return userMapper.toUserResponse(savedUser);
@@ -92,13 +89,11 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::toUserResponse).toList();
     }
 
-    // Lấy thông tin user theo id
     @Override
     @PostAuthorize("hasRole('ADMIN')")
     public UserResponse findById(Long id) {
-        log.info("In method findById with id: {}", id);
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
-        return userMapper.toUserResponse(user);
+        return userMapper.toUserResponse(
+                userRepository.findById(id).orElseThrow(() ->
+                        new AppException(ErrorCode.USER_NOT_EXITSTED)));
     }
 }

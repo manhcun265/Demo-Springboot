@@ -10,19 +10,17 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import java.util.List;
 
-@Mapper(
-    componentModel = "spring",
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE
-)
+@Mapper(componentModel = "spring")
 public interface UserMapper {
     
-    User toEntity(UserCreateRequest request);
+    User toUser(UserCreateRequest request);
 
-    @Mapping(target = "lastName", ignore = true)
+
     UserResponse toUserResponse(User user);
-    
-    void updateEntity(@MappingTarget User user, UserUpdateRequest request);
+
+//    @Mapping(target = "lastName", ignore = true)
+    void updateUser(@MappingTarget User user, UserUpdateRequest request);
     
     // Thêm method để map list
-    List<UserResponse> toResponseList(List<User> users);
+//    List<UserResponse> toResponseList(List<User> users);
 }
