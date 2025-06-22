@@ -8,10 +8,12 @@ import com.manhjava.demo.enums.Role;
 import com.manhjava.demo.exception.AppException;
 import com.manhjava.demo.exception.ErrorCode;
 import com.manhjava.demo.mapper.UserMapper;
+import com.manhjava.demo.repository.RoleRepository;
 import com.manhjava.demo.repository.UserRepository;
 import com.manhjava.demo.service.UserService;
-import com.nimbusds.jose.proc.SecurityContext;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -26,11 +28,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
+    UserRepository userRepository;
+    RoleRepository roleRepository;
+    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     // Tạo mới user
     @Override
@@ -63,13 +67,15 @@ public class UserServiceImpl implements UserService {
     // Cập nhật thông tin user
     @Override
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
 
         userMapper.updateUser(user, request);
-        User savedUser = userRepository.save(user);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        return userMapper.toUserResponse(savedUser);
+        var roles = roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
+
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     // Xóa user theo id
@@ -82,7 +88,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('APPROVE_POST')")
     public List<UserResponse> findAll() {
         log.info("In method getAllUsers");
         return userRepository.findAll().stream()

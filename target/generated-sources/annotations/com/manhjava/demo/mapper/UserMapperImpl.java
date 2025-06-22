@@ -2,6 +2,7 @@ package com.manhjava.demo.mapper;
 
 import com.manhjava.demo.dto.request.UserCreateRequest;
 import com.manhjava.demo.dto.request.UserUpdateRequest;
+import com.manhjava.demo.dto.response.RoleResponse;
 import com.manhjava.demo.dto.response.UserResponse;
 import com.manhjava.demo.entity.Role;
 import com.manhjava.demo.entity.User;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-06-21T16:32:49+0700",
+    date = "2025-06-21T21:51:59+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 17.0.14 (Amazon.com Inc.)"
 )
 @Component
@@ -48,10 +49,7 @@ public class UserMapperImpl implements UserMapper {
         userResponse.firstName( user.getFirstName() );
         userResponse.lastName( user.getLastName() );
         userResponse.dob( user.getDob() );
-        Set<Role> set = user.getRoles();
-        if ( set != null ) {
-            userResponse.roles( new LinkedHashSet<Role>( set ) );
-        }
+        userResponse.roles( roleSetToRoleResponseSet( user.getRoles() ) );
 
         return userResponse.build();
     }
@@ -66,5 +64,28 @@ public class UserMapperImpl implements UserMapper {
         user.setFirstName( request.getFirstName() );
         user.setLastName( request.getLastName() );
         user.setDob( request.getDob() );
+    }
+
+    protected RoleResponse roleToRoleResponse(Role role) {
+        if ( role == null ) {
+            return null;
+        }
+
+        RoleResponse.RoleResponseBuilder roleResponse = RoleResponse.builder();
+
+        return roleResponse.build();
+    }
+
+    protected Set<RoleResponse> roleSetToRoleResponseSet(Set<Role> set) {
+        if ( set == null ) {
+            return null;
+        }
+
+        Set<RoleResponse> set1 = new LinkedHashSet<RoleResponse>( Math.max( (int) ( set.size() / .75f ) + 1, 16 ) );
+        for ( Role role : set ) {
+            set1.add( roleToRoleResponse( role ) );
+        }
+
+        return set1;
     }
 }

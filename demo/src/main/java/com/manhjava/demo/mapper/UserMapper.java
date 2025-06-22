@@ -7,20 +7,16 @@ import com.manhjava.demo.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
-    
+
     User toUser(UserCreateRequest request);
 
 
     UserResponse toUserResponse(User user);
 
-//    @Mapping(target = "lastName", ignore = true)
+    @Mapping(target = "roles", ignore = true)
     void updateUser(@MappingTarget User user, UserUpdateRequest request);
-    
-    // Thêm method để map list
-//    List<UserResponse> toResponseList(List<User> users);
+
 }
