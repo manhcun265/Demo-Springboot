@@ -22,6 +22,7 @@ public enum ErrorCode {
     // Lỗi chưa xác thực
     UNAUTHENTICATED(1006, "User is not authenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1007, "You do not have permission", HttpStatus.FORBIDDEN),
+    INVALID_DOB(1008, "Invalid date of birth", HttpStatus.BAD_REQUEST),
     ;
     // Mã lỗi
     private int code;
