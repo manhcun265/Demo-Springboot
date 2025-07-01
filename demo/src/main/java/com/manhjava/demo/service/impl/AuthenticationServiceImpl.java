@@ -2,11 +2,14 @@ package com.manhjava.demo.service.impl;
 
 import com.manhjava.demo.dto.request.AuthenticationRequest;
 import com.manhjava.demo.dto.request.IntrospectRequest;
+import com.manhjava.demo.dto.request.LogoutRequest;
 import com.manhjava.demo.dto.response.AuthenticationResponse;
 import com.manhjava.demo.dto.response.IntrospectResponse;
+import com.manhjava.demo.entity.InvalidatedToken;
 import com.manhjava.demo.entity.User;
 import com.manhjava.demo.exception.AppException;
 import com.manhjava.demo.exception.ErrorCode;
+import com.manhjava.demo.repository.InvalidatedRepository;
 import com.manhjava.demo.repository.UserRepository;
 import com.manhjava.demo.service.AuthenticationService;
 import com.nimbusds.jose.*;
@@ -30,6 +33,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.StringJoiner;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +43,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     // Repository thao tác với dữ liệu user
     UserRepository userRepository;
-
+    InvalidatedRepository invalidatedRepository;
     // Khóa bí mật dùng để ký JWT, lấy từ cấu hình
     @NonFinal
     @Value("${jwt.signer-key}")
@@ -49,19 +53,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public IntrospectResponse introspect(IntrospectRequest request)
             throws JOSEException, ParseException {
-
         var token = request.getToken();
 
-        JWSVerifier verifier = new MACVerifier(SINGER_KEY.getBytes());
-
-        SignedJWT signedJWT = SignedJWT.parse(token);
-
-        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
-
-        var verified = signedJWT.verify(verifier);
-
+        boolean isValid = true;
+        try {
+            verifyToken(token);
+        } catch (AppException e) {
+            isValid = false;
+        }
         return IntrospectResponse.builder()
-                .valid(verified && expirationTime.after(new Date()))
+                .valid(isValid)
                 .build();
     }
 
@@ -69,7 +70,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         var user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         boolean authenicated = passwordEncoder.matches(request.getPassword(),
@@ -86,7 +87,38 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
-    // Sinh JWT token cho user
+    public void logout(LogoutRequest request) throws ParseException, JOSEException {
+        var signToken = verifyToken(request.getToken());
+        String jit = signToken.getJWTClaimsSet().getJWTID();
+        Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(jit)
+                .expiryTime(expiryTime)
+                .build();
+
+        invalidatedRepository.save(invalidatedToken);
+    }
+
+    private SignedJWT verifyToken(String token) throws JOSEException, ParseException {
+
+        JWSVerifier verifier = new MACVerifier(SINGER_KEY.getBytes());
+
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+        var verified = signedJWT.verify(verifier);
+        if (!(verified && expirationTime.after(new Date())))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        if (invalidatedRepository
+                .existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        return signedJWT;
+    }
+
     private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
@@ -97,6 +129,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .expirationTime(new Date(
                         Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
                 ))
+                .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .build();
 

@@ -40,7 +40,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User createUser(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_EXITSTED);
+            throw new AppException(ErrorCode.USER_EXISTED);
         }
 
         User user = userMapper.toUser(request);
@@ -59,7 +59,7 @@ public class UserServiceImpl implements UserService {
         var context = SecurityContextHolder.getContext();
         String name = context.getAuthentication().getName();
         User user = userRepository.findByUsername(name)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         return userMapper.toUserResponse(user);
     }
@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
     // Cập nhật thông tin user
     @Override
     public UserResponse updateUser(Long id, UserUpdateRequest request) {
-        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
+        User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         userMapper.updateUser(user, request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -82,7 +82,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXITSTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         userRepository.delete(user);
     }
 
@@ -100,6 +100,6 @@ public class UserServiceImpl implements UserService {
     public UserResponse findById(Long id) {
         return userMapper.toUserResponse(
                 userRepository.findById(id).orElseThrow(() ->
-                        new AppException(ErrorCode.USER_NOT_EXITSTED)));
+                        new AppException(ErrorCode.USER_NOT_EXISTED)));
     }
 }

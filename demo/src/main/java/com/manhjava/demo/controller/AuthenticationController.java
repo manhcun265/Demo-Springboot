@@ -1,9 +1,11 @@
 package com.manhjava.demo.controller;
 
 // Import các class DTO, service, annotation và exception cần thiết
+
 import com.manhjava.demo.dto.request.ApiResponse;
 import com.manhjava.demo.dto.request.AuthenticationRequest;
 import com.manhjava.demo.dto.request.IntrospectRequest;
+import com.manhjava.demo.dto.request.LogoutRequest;
 import com.manhjava.demo.dto.response.AuthenticationResponse;
 import com.manhjava.demo.dto.response.IntrospectResponse;
 import com.manhjava.demo.service.AuthenticationService;
@@ -48,10 +50,18 @@ public class AuthenticationController {
     // @return: ApiResponse chứa IntrospectResponse (thông tin token)
     @PostMapping("/introspect")
     ApiResponse<IntrospectResponse> authenticate(@Valid @RequestBody IntrospectRequest request)
-    throws JOSEException, ParseException {
+            throws JOSEException, ParseException {
         var result = authenticationService.introspect(request);
         return ApiResponse.<IntrospectResponse>builder()
                 .result(result)
+                .build();
+    }
+
+    @PostMapping("/logout")
+    ApiResponse<Void> logout(@Valid @RequestBody LogoutRequest request)
+            throws JOSEException, ParseException {
+        authenticationService.logout(request);
+        return ApiResponse.<Void>builder()
                 .build();
     }
 }
