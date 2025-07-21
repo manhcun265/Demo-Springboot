@@ -38,10 +38,11 @@ public class UserServiceImpl implements UserService {
 
     // Tạo mới user
     @Override
-    public User createUser(UserCreateRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
+    public UserResponse createUser(UserCreateRequest request){
+        log.info("Service: Create User");
+
+        if (userRepository.existsByUsername(request.getUsername()))
             throw new AppException(ErrorCode.USER_EXISTED);
-        }
 
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
@@ -49,9 +50,9 @@ public class UserServiceImpl implements UserService {
         HashSet<String> roles = new HashSet<>();
         roles.add(Role.USER.name());
 
-//        user.setRoles(roles);
+        // user.setRoles(roles);
 
-        return userRepository.save(user);
+        return userMapper.toUserResponse(userRepository.save(user));
     }
 
     @Override

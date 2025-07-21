@@ -8,7 +8,7 @@ import com.manhjava.demo.entity.User;
 import java.util.List;
 
 public interface UserService {
-    User createUser(UserCreateRequest request);
+    UserResponse createUser(UserCreateRequest request);
 
     UserResponse updateUser(Long id, UserUpdateRequest request);
 

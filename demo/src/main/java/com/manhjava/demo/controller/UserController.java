@@ -33,10 +33,11 @@ public class UserController {
     // @param request: thông tin user cần tạo
     // @return: ApiResponse chứa User vừa tạo
     @PostMapping
-    ApiResponse<User> createUser(@Valid @RequestBody UserCreateRequest request) {
-        ApiResponse<User> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(userService.createUser(request));
-        return apiResponse;
+    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreateRequest request){
+        log.info("Controller: create User");
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.createUser(request))
+                .build();
     }
 
     // API endpoint lấy danh sách tất cả user
